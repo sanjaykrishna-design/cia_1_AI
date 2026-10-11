@@ -1,0 +1,1585 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0}[hidden]{display:none!important}</style></head><body>
+<title>Agent Arena AI Quiz</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Agent Arena - styles. Chunky "game card" look: thick outlines, hard shadows, five level colours. */
+:root{
+  --page:#E6F4F1; --card:#FFFFFF; --soft:#F2FAF8; --ink:#12302B; --dim:#4F6B66; --edge:#12302B;
+  --hot:#FF6B4A; --hot-ink:#2B0D05; --sun:#FFD23F; --sky:#2F6FED; --sky-ink:#FFFFFF;
+  --yes:#1F9D61; --yes-bg:#DDF5E8; --no:#D43D3D; --no-bg:#FCE4E4;
+  --l1:#FF6B4A; --l2:#2F6FED; --l3:#9B5DE5; --l4:#1F9D61; --l5:#E0A100;
+  --shadow:4px 4px 0 var(--edge);
+  --head:"Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  --text:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --code:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --page:#0E1F1D; --card:#17302C; --soft:#1D3A35; --ink:#E8F5F2; --dim:#9DBBB5; --edge:#04100E;
+    --hot:#FF8466; --hot-ink:#2B0D05; --sun:#FFD95C; --sky:#6C9BFF; --sky-ink:#081430;
+    --yes:#5BD79A; --yes-bg:#143826; --no:#FF8A8A; --no-bg:#401A1A;
+    --l1:#FF8466; --l2:#6C9BFF; --l3:#BC8CFF; --l4:#5BD79A; --l5:#FFCB47;
+    color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--page);color:var(--ink);font-family:var(--text);font-size:17px;line-height:1.5}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
+h1,h2,h3{font-family:var(--head);line-height:1.1;margin:0}
+p{margin:0}
+.shell{max-width:860px;margin:0 auto;padding:18px 16px 40px;display:flex;flex-direction:column;gap:20px}
+.bar{display:flex;flex-wrap:wrap;gap:10px 20px;justify-content:space-between;align-items:center}
+.logo{display:flex;align-items:center;gap:10px;background:none;border:0;padding:0;font-family:var(--head);font-weight:800;font-size:26px}
+.logo-bot{width:34px;height:28px;border:3px solid var(--edge);border-radius:8px;background:var(--sun);display:flex;justify-content:center;align-items:center;gap:6px}
+.logo-bot i{width:6px;height:6px;border-radius:50%;background:var(--edge)}
+.tabs{display:flex;flex-wrap:wrap;gap:6px}
+.tabs button{background:var(--card);border:2px solid var(--edge);border-radius:999px;padding:4px 14px;font-weight:700;font-size:15px}
+.tabs button.on{background:var(--edge);color:var(--page)}
+.foot{font-size:13px;color:var(--dim);text-align:center}
+.card{background:var(--card);border:3px solid var(--edge);border-radius:14px;box-shadow:var(--shadow);padding:22px}
+.col{display:flex;flex-direction:column;gap:16px}
+.line{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.dim{color:var(--dim)}
+.num{font-family:var(--code);font-variant-numeric:tabular-nums}
+.go{background:var(--hot);color:var(--hot-ink);border:3px solid var(--edge);border-radius:12px;box-shadow:var(--shadow);padding:10px 24px;font-family:var(--head);font-weight:700;font-size:20px}
+.go:active:not(:disabled){transform:translate(3px,3px);box-shadow:1px 1px 0 var(--edge)}
+.go:disabled{opacity:.45;cursor:not-allowed}
+.go.alt{background:var(--card);color:var(--ink)}
+.go.sm{font-size:16px;padding:6px 16px;box-shadow:3px 3px 0 var(--edge)}
+
+/* start */
+.title{font-size:clamp(36px,8vw,62px);font-weight:800}
+.title em{font-style:normal;color:var(--hot)}
+.split{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:740px){.split{grid-template-columns:minmax(0,1fr)}}
+label.cap,.cap{font-weight:700;font-size:15px;display:block;margin-bottom:6px}
+input[type=text]{width:100%;background:var(--soft);border:2px solid var(--edge);border-radius:10px;padding:10px 12px}
+.pick{display:flex;flex-wrap:wrap;gap:8px}
+.pick button{background:var(--soft);border:2px solid var(--edge);border-radius:10px;padding:8px 12px;text-align:left;min-width:0}
+.pick button b{display:block;font-family:var(--head);font-size:17px;line-height:1.2}
+.pick button small{color:var(--dim);font-size:13px}
+.pick button.on{background:var(--sun);color:#2B2100}
+.pick button.on small{color:#4d3d00}
+.ladder{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.ladder li{display:flex;gap:10px;align-items:flex-start}
+.chip{flex:none;width:30px;height:30px;border-radius:8px;border:2px solid var(--edge);display:grid;place-items:center;font-family:var(--head);font-weight:800;color:#fff}
+.c1{background:var(--l1)}.c2{background:var(--l2)}.c3{background:var(--l3)}.c4{background:var(--l4)}.c5{background:var(--l5)}
+.ladder b{font-family:var(--head)}
+.ladder span{display:block;font-size:14px;color:var(--dim)}
+
+/* play */
+.hud{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch}
+.hud>div{background:var(--card);border:2px solid var(--edge);border-radius:10px;padding:6px 12px;display:flex;flex-direction:column;justify-content:center}
+.hud small{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.hud b{font-family:var(--code);font-size:19px}
+.hearts{letter-spacing:2px;color:var(--no)}
+.hearts .lost{opacity:.25}
+.clock{margin-left:auto;flex-direction:row!important;align-items:center;gap:10px}
+.ring{--p:100;width:40px;height:40px;border-radius:50%;background:conic-gradient(var(--sky) calc(var(--p)*1%),var(--soft) 0);border:2px solid var(--edge);display:grid;place-items:center}
+.ring::after{content:"";width:22px;height:22px;border-radius:50%;background:var(--card);border:2px solid var(--edge)}
+.ring.low{background:conic-gradient(var(--no) calc(var(--p)*1%),var(--soft) 0)}
+.steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.steps div{height:14px;border:2px solid var(--edge);border-radius:999px;background:var(--card);overflow:hidden}
+.steps i{display:block;height:100%;width:0}
+.meta{display:flex;flex-wrap:wrap;gap:6px}
+.pill{font-family:var(--code);font-size:12px;border:2px solid var(--edge);border-radius:999px;padding:1px 9px;background:var(--soft)}
+.pill.kind{color:#fff}
+.ask{font-size:20px;font-weight:700;line-height:1.4;overflow-wrap:anywhere}
+.fig{font-family:var(--code);font-size:15px;white-space:pre;background:var(--soft);border:2px dashed var(--edge);border-radius:10px;padding:10px 14px;overflow-x:auto}
+.ar p{margin-bottom:6px}
+.choices{display:grid;gap:10px}
+.choices.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.choice{display:flex;gap:10px;align-items:flex-start;text-align:left;background:var(--soft);border:2px solid var(--edge);border-radius:12px;padding:10px 12px}
+.choice .key{flex:none;font-family:var(--head);font-weight:800;width:28px;height:28px;border-radius:8px;border:2px solid var(--edge);display:grid;place-items:center;background:var(--card)}
+.choice span:last-child{min-width:0;overflow-wrap:anywhere}
+.choice:hover:not(:disabled){background:var(--card)}
+.choice.on{background:var(--sun);color:#2B2100}
+.choice.good{background:var(--yes-bg);border-color:var(--yes)}
+.choice.good .key{background:var(--yes);color:#fff;border-color:var(--yes)}
+.choice.bad{background:var(--no-bg);border-color:var(--no)}
+.choice.out{opacity:.3;text-decoration:line-through}
+.choice:disabled{cursor:default}
+.pairs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:10px 16px}
+.pairs .side{display:flex;flex-direction:column;gap:8px}
+@media (max-width:560px){.pairs{grid-template-columns:minmax(0,1fr)}}
+.tile{display:flex;gap:8px;align-items:flex-start;text-align:left;background:var(--soft);border:2px solid var(--edge);border-radius:10px;padding:8px 10px;min-height:44px}
+.tile.on{background:var(--sun);color:#2B2100}
+.tile .tag{flex:none;font-family:var(--code);font-weight:700;font-size:13px;min-width:22px;height:22px;border-radius:6px;display:grid;place-items:center;background:var(--sky);color:var(--sky-ink)}
+.tile.good{border-color:var(--yes);background:var(--yes-bg)}.tile.bad{border-color:var(--no);background:var(--no-bg)}
+.power{display:flex;flex-wrap:wrap;gap:8px}
+.power button{background:var(--card);border:2px dashed var(--edge);border-radius:999px;padding:4px 12px;font-size:14px;font-weight:700}
+.power button:disabled{opacity:.4;cursor:not-allowed}
+.power button.armed{background:var(--sky);color:var(--sky-ink);border-style:solid}
+.clue{background:var(--soft);border-left:6px solid var(--sun);border-radius:6px;padding:8px 12px}
+.verdict{border:3px solid var(--edge);border-radius:12px;padding:12px 16px}
+.verdict.good{background:var(--yes-bg);border-color:var(--yes)}
+.verdict.bad{background:var(--no-bg);border-color:var(--no)}
+.verdict h3{font-size:22px;margin-bottom:4px}
+.banner{color:#fff;border-radius:12px;border:3px solid var(--edge);padding:20px}
+.banner h2{font-size:34px}
+.banner p{opacity:.95}
+
+/* end */
+.stars{font-size:40px;letter-spacing:6px;color:var(--sun);-webkit-text-stroke:2px var(--edge)}
+.stars .off{color:var(--soft)}
+.huge{font-family:var(--head);font-weight:800;font-size:clamp(52px,12vw,88px);line-height:.9}
+.badges{display:flex;flex-wrap:wrap;gap:8px}
+.badge{background:var(--sun);color:#2B2100;border:2px solid var(--edge);border-radius:999px;padding:3px 12px;font-weight:700;font-size:14px}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+th,td{text-align:left;padding:8px 10px;border-bottom:2px solid var(--soft);white-space:nowrap}
+th{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+td.r,th.r{text-align:right;font-family:var(--code)}
+tr.me td{background:var(--soft);font-weight:700}
+.meter{display:inline-block;width:110px;height:12px;border:2px solid var(--edge);border-radius:999px;overflow:hidden;vertical-align:middle;background:var(--card)}
+.meter i{display:block;height:100%}
+.rev{border-top:2px solid var(--soft);padding:12px 0;display:flex;flex-direction:column;gap:5px}
+.key-ans{background:var(--yes-bg);border-left:6px solid var(--yes);border-radius:6px;padding:6px 12px}
+.ok{color:var(--yes);font-weight:700}.ko{color:var(--no);font-weight:700}
+.empty{border:3px dashed var(--edge);border-radius:14px;padding:26px}
+ul.plain{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+</style>
+<div class="shell">
+  <header class="bar">
+    <button class="logo" data-act="go" data-to="start" aria-label="Agent Arena home">
+      <span class="logo-bot" aria-hidden="true"><i></i><i></i></span>Agent Arena
+    </button>
+    <nav class="tabs" id="tabs" aria-label="Sections">
+      <button data-act="go" data-to="start">Play</button>
+      <button data-act="go" data-to="fame">Hall of Fame</button>
+      <button data-act="go" data-to="bank">Questions</button>
+      <button data-act="go" data-to="rules">Rules</button>
+    </nav>
+  </header>
+  <main id="view"></main>
+  <footer class="foot">DSC401-6 Artificial Intelligence · Units I &amp; II · 60 questions in 5 levels</footer>
+</div>
+<script>
+// Agent Arena - question bank: 60 questions in 5 levels (Units I and II)
+const BANK = {
+ "levels": [
+  {
+   "n": 1,
+   "name": "First Contact",
+   "about": "Foundations of AI and the Turing Test"
+  },
+  {
+   "n": 2,
+   "name": "Agent Academy",
+   "about": "Rational and intelligent agents, environments, good behaviour"
+  },
+  {
+   "n": 3,
+   "name": "Problem Lab",
+   "about": "Problems, state spaces, production systems, problem characteristics, search design"
+  },
+  {
+   "n": 4,
+   "name": "Blind Search",
+   "about": "Breadth-first, depth-first and iterative deepening search"
+  },
+  {
+   "n": 5,
+   "name": "Guided Search",
+   "about": "Hill climbing, heuristics, best-first search, CSP, means-end analysis"
+  }
+ ],
+ "arOptions": [
+  "Both A and R are true and R correctly explains A",
+  "Both A and R are true but R does not explain A",
+  "A is true but R is false",
+  "A is false but R is true"
+ ],
+ "questions": [
+  {
+   "id": "AA01",
+   "level": 1,
+   "topic": "Foundations and Applications of AI",
+   "kind": "mcq",
+   "text": "Under the rational-agent view, AI is best described as the study of",
+   "hint": "Think: percepts in, actions out, best expected result.",
+   "why": "Modern AI is framed as building agents that receive percepts from an environment and act to achieve the best expected outcome.",
+   "real": false,
+   "search": false,
+   "options": [
+    "programs that never need data",
+    "agents that perceive and act so as to achieve the best expected outcome",
+    "machines that look like humans",
+    "computers that store very large databases"
+   ],
+   "answer": 1
+  },
+  {
+   "id": "AA02",
+   "level": 1,
+   "topic": "Foundations and Applications of AI",
+   "kind": "truefalse",
+   "text": "The Logic Theorist, written by Newell and Simon in the 1950s, is regarded as one of the first AI programs.",
+   "hint": "It proved theorems from Principia Mathematica.",
+   "why": "True. The Logic Theorist (1956) proved mathematical theorems and is often called the first AI program.",
+   "real": false,
+   "search": false,
+   "answer": true
+  },
+  {
+   "id": "AA03",
+   "level": 1,
+   "topic": "Foundations and Applications of AI",
+   "kind": "blank",
+   "text": "A program that stores the knowledge of human specialists in one narrow field and uses it to give advice is called an ______ system.",
+   "hint": "MYCIN and DENDRAL are examples.",
+   "why": "Expert systems encode specialist knowledge, usually as rules, to solve problems in a narrow domain.",
+   "real": false,
+   "search": false,
+   "accept": [
+    "expert"
+   ]
+  },
+  {
+   "id": "AA04",
+   "level": 1,
+   "topic": "Foundations and Applications of AI",
+   "kind": "scenario",
+   "text": "You say \"set an alarm for 6 a.m.\" to a smart speaker and it does so. Which AI capability turns the sound of your voice into words?",
+   "hint": "The first step is hearing, not understanding.",
+   "why": "Speech recognition converts audio into text; natural language understanding then works out what the text means.",
+   "real": true,
+   "search": false,
+   "options": [
+    "Robotics",
+    "Path planning",
+    "Constraint satisfaction",
+    "Speech recognition"
+   ],
+   "answer": 3
+  },
+  {
+   "id": "AA05",
+   "level": 1,
+   "topic": "Foundations and Applications of AI",
+   "kind": "scenario",
+   "text": "A hospital uses software that examines chest X-ray images and marks areas that may show pneumonia. Which branch of AI is mainly at work?",
+   "hint": "The input is an image.",
+   "why": "Interpreting images such as X-rays is a computer vision task, usually done with learned models.",
+   "real": true,
+   "search": false,
+   "options": [
+    "Computer vision",
+    "Game playing",
+    "Theorem proving",
+    "Speech synthesis"
+   ],
+   "answer": 0
+  },
+  {
+   "id": "AA06",
+   "level": 1,
+   "topic": "Foundations and Applications of AI",
+   "kind": "match",
+   "text": "Match each discipline with what it contributed to AI.",
+   "hint": "Utility theory came from the study of markets.",
+   "why": "AI draws on many fields: mathematics for logic and probability, neuroscience for the brain, linguistics for language and economics for decision theory.",
+   "real": false,
+   "search": false,
+   "pairs": [
+    [
+     "Mathematics",
+     "Formal logic, probability and algorithms"
+    ],
+    [
+     "Neuroscience",
+     "How the brain processes information"
+    ],
+    [
+     "Linguistics",
+     "The structure and meaning of language"
+    ],
+    [
+     "Economics",
+     "Making decisions that maximise payoff"
+    ]
+   ]
+  },
+  {
+   "id": "AA07",
+   "level": 1,
+   "topic": "Turing Test",
+   "kind": "mcq",
+   "text": "In which paper did Alan Turing propose his test for machine intelligence?",
+   "hint": "Published in the journal Mind in 1950.",
+   "why": "Turing introduced the imitation game in \"Computing Machinery and Intelligence\" (1950).",
+   "real": false,
+   "search": false,
+   "options": [
+    "Minds, Brains and Programs",
+    "A Logical Calculus of Ideas",
+    "On Computable Numbers",
+    "Computing Machinery and Intelligence"
+   ],
+   "answer": 3
+  },
+  {
+   "id": "AA08",
+   "level": 1,
+   "topic": "Turing Test",
+   "kind": "mcq",
+   "text": "Why does the interrogator in the Turing Test communicate only through typed messages?",
+   "hint": "The test is about intelligence, not about looking human.",
+   "why": "Text-only communication removes physical cues, so the judge decides purely on the content of the answers.",
+   "real": false,
+   "search": false,
+   "options": [
+    "Because early computers had no screens",
+    "Typing is faster than speaking",
+    "So that the machine's appearance and voice do not influence the judgement",
+    "To make the test easier for the human"
+   ],
+   "answer": 2
+  },
+  {
+   "id": "AA09",
+   "level": 1,
+   "topic": "Turing Test",
+   "kind": "truefalse",
+   "text": "A machine needs a human-like robotic body to pass the standard Turing Test.",
+   "hint": "Only the total Turing Test involves physical interaction.",
+   "why": "False. The standard test is text-only. Vision and robotics are needed only for the total Turing Test.",
+   "real": false,
+   "search": false,
+   "answer": false
+  },
+  {
+   "id": "AA10",
+   "level": 1,
+   "topic": "Turing Test",
+   "kind": "assertion",
+   "text": "",
+   "hint": "Think of ELIZA-style chatbots.",
+   "why": "Both are true and R explains A. Critics such as Searle argue that imitating conversation is not the same as understanding.",
+   "real": false,
+   "search": false,
+   "assertion": "The Turing Test has been criticised as a measure of real intelligence.",
+   "reason": "A program might fool the judge with conversational tricks without understanding anything.",
+   "answer": 0
+  },
+  {
+   "id": "AA11",
+   "level": 1,
+   "topic": "Turing Test",
+   "kind": "mcq",
+   "text": "Which capability is NOT required to pass the standard (text-only) Turing Test?",
+   "hint": "The judge never hands the machine an object.",
+   "why": "The standard test needs NLP, knowledge representation, automated reasoning and machine learning. Robotics is needed only for the total test.",
+   "real": false,
+   "search": false,
+   "options": [
+    "Automated reasoning",
+    "Robotics",
+    "Natural language processing",
+    "Knowledge representation"
+   ],
+   "answer": 1
+  },
+  {
+   "id": "AA12",
+   "level": 1,
+   "topic": "Turing Test",
+   "kind": "scenario",
+   "text": "A customer chats with a support bot for ten minutes and never realises it is not a person. In terms of the four approaches to AI, the bot is succeeding at",
+   "hint": "It is judged on behaviour that resembles a person's.",
+   "why": "Behaving indistinguishably from a human is the \"acting humanly\" approach, which the Turing Test measures.",
+   "real": true,
+   "search": false,
+   "options": [
+    "acting humanly",
+    "acting optimally",
+    "thinking humanly",
+    "thinking rationally"
+   ],
+   "answer": 0
+  },
+  {
+   "id": "AA13",
+   "level": 2,
+   "topic": "Rational Agents",
+   "kind": "scenario",
+   "text": "A stock-trading bot always chooses the trade with the highest expected profit given the data it has, yet on some days it still loses money. Its behaviour is best described as",
+   "hint": "Rational is not the same as always winning.",
+   "why": "Rationality is about choosing the action with the best expected result given the percepts and knowledge, not about guaranteed success.",
+   "real": true,
+   "search": false,
+   "options": [
+    "random",
+    "irrational, because it lost money",
+    "omniscient",
+    "rational, because it maximised expected performance with the information available"
+   ],
+   "answer": 3
+  },
+  {
+   "id": "AA14",
+   "level": 2,
+   "topic": "Rational Agents",
+   "kind": "assertion",
+   "text": "",
+   "hint": "Looking both ways before crossing is an action too.",
+   "why": "Both are true and R explains A. Information gathering (exploration) is part of rational behaviour.",
+   "real": false,
+   "search": false,
+   "assertion": "A rational agent should sometimes act just to gather information.",
+   "reason": "Better information improves the agent's future percepts and so its expected performance.",
+   "answer": 0
+  },
+  {
+   "id": "AA15",
+   "level": 2,
+   "topic": "Intelligent Agents",
+   "kind": "mcq",
+   "text": "In a learning agent, which component judges how well the agent is doing against a fixed performance standard?",
+   "hint": "It gives feedback, like a reviewer.",
+   "why": "The critic provides feedback against a performance standard; the learning element uses it to improve the performance element.",
+   "real": false,
+   "search": false,
+   "options": [
+    "Problem generator",
+    "Performance element",
+    "Critic",
+    "Actuator"
+   ],
+   "answer": 2
+  },
+  {
+   "id": "AA16",
+   "level": 2,
+   "topic": "Intelligent Agents",
+   "kind": "scenario",
+   "text": "A robot vacuum remembers which rooms it has already cleaned, even though it cannot see them from where it is now. Which agent design does this need?",
+   "hint": "It keeps track of parts of the world it cannot currently perceive.",
+   "why": "A model-based agent maintains internal state that tracks unobserved aspects of the world.",
+   "real": true,
+   "search": false,
+   "options": [
+    "Simple reflex agent",
+    "Model-based reflex agent",
+    "Table-lookup agent with no memory",
+    "None; it is impossible"
+   ],
+   "answer": 1
+  },
+  {
+   "id": "AA17",
+   "level": 2,
+   "topic": "Intelligent Agents",
+   "kind": "scenario",
+   "text": "A delivery drone is given an address and works out which sequence of moves will get it there. It has no preference between routes as long as it arrives. Which agent type is this?",
+   "hint": "It only cares whether the destination is reached.",
+   "why": "A goal-based agent chooses actions by asking whether they lead to the goal. Preferences between successful routes would need a utility function.",
+   "real": true,
+   "search": false,
+   "options": [
+    "Goal-based agent",
+    "Learning agent",
+    "Utility-based agent",
+    "Simple reflex agent"
+   ],
+   "answer": 0
+  },
+  {
+   "id": "AA18",
+   "level": 2,
+   "topic": "Agents and Environments",
+   "kind": "blank",
+   "text": "Anything that perceives its environment through sensors and acts on it through actuators is called an ______.",
+   "hint": "The central word of Unit I.",
+   "why": "This is the standard definition of an agent.",
+   "real": false,
+   "search": false,
+   "accept": [
+    "agent"
+   ]
+  },
+  {
+   "id": "AA19",
+   "level": 2,
+   "topic": "Agents and Environments",
+   "kind": "mcq",
+   "text": "For a human being viewed as an agent, which of these are actuators?",
+   "hint": "Actuators are what you use to act.",
+   "why": "Hands, legs and the vocal tract act on the world. Eyes, ears, skin and nose are sensors.",
+   "real": false,
+   "search": false,
+   "options": [
+    "Memory and beliefs",
+    "Eyes and ears",
+    "Hands, legs and vocal tract",
+    "Skin and nose"
+   ],
+   "answer": 2
+  },
+  {
+   "id": "AA20",
+   "level": 2,
+   "topic": "Agents and Environments",
+   "kind": "problem",
+   "text": "In the vacuum world there are two squares, A and B. Each square is either clean or dirty and the vacuum is in one of the two squares. How many different world states are possible?",
+   "hint": "Positions × dirt combinations.",
+   "why": "2 positions × 2 × 2 dirt combinations = 8 states.",
+   "real": false,
+   "search": true,
+   "options": [
+    "4",
+    "6",
+    "8",
+    "16"
+   ],
+   "answer": 2
+  },
+  {
+   "id": "AA21",
+   "level": 2,
+   "topic": "Good Behaviour",
+   "kind": "scenario",
+   "text": "You are writing a PEAS description for a part-picking robot on a factory line. Which of these is its Environment?",
+   "hint": "Where does the robot work?",
+   "why": "The conveyor belt, parts and bins form the environment. The percentage in correct bins is the performance measure, the arm is the actuator and the camera is the sensor.",
+   "real": true,
+   "search": false,
+   "options": [
+    "Camera and joint-angle sensors",
+    "Conveyor belt with parts, and bins",
+    "Jointed arm and gripper",
+    "Percentage of parts placed in the correct bin"
+   ],
+   "answer": 1
+  },
+  {
+   "id": "AA22",
+   "level": 2,
+   "topic": "Good Behaviour",
+   "kind": "truefalse",
+   "text": "A performance measure should evaluate the sequence of environment states the agent produces, not the agent's own opinion of how well it did.",
+   "hint": "An agent could simply tell itself it did perfectly.",
+   "why": "True. Performance is judged from the outside, on the environment states, so the agent cannot delude itself.",
+   "real": false,
+   "search": false,
+   "answer": true
+  },
+  {
+   "id": "AA23",
+   "level": 2,
+   "topic": "Nature of Environments",
+   "kind": "scenario",
+   "text": "A farming robot sows seeds, but whether they grow depends on rain that may or may not come. From the robot's point of view the environment is",
+   "hint": "The same action can lead to different outcomes.",
+   "why": "When the next state is not fully determined by the current state and the action, the environment is stochastic.",
+   "real": true,
+   "search": false,
+   "options": [
+    "episodic",
+    "static",
+    "deterministic",
+    "stochastic"
+   ],
+   "answer": 3
+  },
+  {
+   "id": "AA24",
+   "level": 2,
+   "topic": "Nature of Environments",
+   "kind": "match",
+   "text": "Match each environment property with its opposite.",
+   "hint": "One pair is about change over time, one about chance.",
+   "why": "These are four of the standard dimensions used to classify task environments.",
+   "real": false,
+   "search": false,
+   "pairs": [
+    [
+     "Deterministic",
+     "Stochastic"
+    ],
+    [
+     "Episodic",
+     "Sequential"
+    ],
+    [
+     "Static",
+     "Dynamic"
+    ],
+    [
+     "Discrete",
+     "Continuous"
+    ]
+   ]
+  },
+  {
+   "id": "AA25",
+   "level": 3,
+   "topic": "Problems and Problem Spaces",
+   "kind": "mcq",
+   "text": "In a formally defined search problem, which component tells the program when to stop searching?",
+   "hint": "It checks whether a state is a solution.",
+   "why": "The goal test decides whether a given state is a goal state.",
+   "real": false,
+   "search": false,
+   "options": [
+    "Goal test",
+    "Successor function",
+    "Initial state",
+    "Path cost"
+   ],
+   "answer": 0
+  },
+  {
+   "id": "AA26",
+   "level": 3,
+   "topic": "Problems and Problem Spaces",
+   "kind": "problem",
+   "text": "You have a 5-litre jug and a 3-litre jug, both empty, and a tap. You may fill a jug, empty a jug, or pour one into the other. What is the smallest number of moves that leaves exactly 4 litres in the 5-litre jug?",
+   "hint": "Start by filling the 5-litre jug.",
+   "why": "(5L,3L): (0,0) → (5,0) → (2,3) → (2,0) → (0,2) → (5,2) → (4,3). Six moves, which breadth-first search confirms is the minimum.",
+   "real": false,
+   "search": true,
+   "options": [
+    "4",
+    "6",
+    "7",
+    "8"
+   ],
+   "answer": 1
+  },
+  {
+   "id": "AA27",
+   "level": 3,
+   "topic": "Problems and Problem Spaces",
+   "kind": "problem",
+   "text": "A farmer must take a wolf, a goat and a cabbage across a river. The boat carries the farmer and at most one item. The wolf cannot be left alone with the goat, nor the goat with the cabbage. What is the minimum number of river crossings?",
+   "hint": "The goat has to travel more than once.",
+   "why": "The shortest solution needs 7 crossings: goat over, back, wolf over, goat back, cabbage over, back, goat over.",
+   "real": false,
+   "search": true,
+   "options": [
+    "5",
+    "7",
+    "9",
+    "11"
+   ],
+   "answer": 1
+  },
+  {
+   "id": "AA28",
+   "level": 3,
+   "topic": "State Space Search",
+   "kind": "truefalse",
+   "text": "A state space can be drawn as a directed graph in which nodes are states and edges are the operators that connect them.",
+   "hint": "This is the usual picture of a search problem.",
+   "why": "True. Searching for a solution means finding a path in this graph from the initial state to a goal state.",
+   "real": false,
+   "search": false,
+   "answer": true
+  },
+  {
+   "id": "AA29",
+   "level": 3,
+   "topic": "State Space Search",
+   "kind": "problem",
+   "text": "In tic-tac-toe each of the 9 squares is blank, X or O. What is the upper bound on the number of board configurations?",
+   "hint": "Three choices for each of nine squares.",
+   "why": "3⁹ = 19,683. Many of these are not legal positions, so it is only an upper bound.",
+   "real": false,
+   "search": true,
+   "options": [
+    "81",
+    "512",
+    "19,683",
+    "362,880"
+   ],
+   "answer": 2
+  },
+  {
+   "id": "AA30",
+   "level": 3,
+   "topic": "State Space Search",
+   "kind": "problem",
+   "text": "The Tower of Hanoi puzzle with 3 discs is modelled as a state-space problem. What is the length of the shortest solution path?",
+   "hint": "The formula is 2ⁿ − 1.",
+   "why": "The shortest solution for n discs has 2ⁿ − 1 moves, so 3 discs need 7 moves.",
+   "real": false,
+   "search": true,
+   "options": [
+    "3",
+    "6",
+    "7",
+    "8"
+   ],
+   "answer": 2
+  },
+  {
+   "id": "AA31",
+   "level": 3,
+   "topic": "Production Systems",
+   "kind": "mcq",
+   "text": "In a production rule, what does the left-hand side specify?",
+   "hint": "Rules have the form IF … THEN …",
+   "why": "The left side (condition) determines when the rule applies; the right side describes the action to perform.",
+   "real": false,
+   "search": false,
+   "options": [
+    "The condition under which the rule can be applied",
+    "The order of search",
+    "The goal state",
+    "The cost of the rule"
+   ],
+   "answer": 0
+  },
+  {
+   "id": "AA32",
+   "level": 3,
+   "topic": "Production Systems",
+   "kind": "blank",
+   "text": "The component of a production system that holds the current facts about the problem being solved is called the working ______.",
+   "hint": "It is also called the global database.",
+   "why": "Working memory (the global database) holds the current state; rules are matched against it.",
+   "real": false,
+   "search": false,
+   "accept": [
+    "memory"
+   ]
+  },
+  {
+   "id": "AA33",
+   "level": 3,
+   "topic": "Problem Characteristics",
+   "kind": "mcq",
+   "text": "Which of these is a best-path problem rather than an any-path problem?",
+   "hint": "In which one must every alternative be compared?",
+   "why": "The travelling salesman problem needs the shortest tour, so finding one solution is not enough.",
+   "real": false,
+   "search": false,
+   "options": [
+    "Checking whether a statement follows from a set of facts",
+    "The travelling salesman problem",
+    "Finding any way out of a maze",
+    "Solving a crossword"
+   ],
+   "answer": 1
+  },
+  {
+   "id": "AA34",
+   "level": 3,
+   "topic": "Problem Characteristics",
+   "kind": "scenario",
+   "text": "A robot arm building a tower puts down the wrong block. It can pick the block up again and continue. How would you classify the solution steps of this problem?",
+   "hint": "The mistake can be undone.",
+   "why": "Steps that can be undone make the problem recoverable; such problems are solved with backtracking.",
+   "real": true,
+   "search": false,
+   "options": [
+    "Ignorable",
+    "Unpredictable",
+    "Recoverable",
+    "Irrecoverable"
+   ],
+   "answer": 2
+  },
+  {
+   "id": "AA35",
+   "level": 3,
+   "topic": "Issues in Search Program Design",
+   "kind": "mcq",
+   "text": "Forward reasoning in a search program begins from",
+   "hint": "It is also called data-driven reasoning.",
+   "why": "Forward (data-driven) reasoning starts at the initial state and applies rules until a goal is reached.",
+   "real": false,
+   "search": false,
+   "options": [
+    "the most expensive rule",
+    "the goal state",
+    "the initial state",
+    "a random state"
+   ],
+   "answer": 2
+  },
+  {
+   "id": "AA36",
+   "level": 3,
+   "topic": "Issues in Search Program Design",
+   "kind": "assertion",
+   "text": "",
+   "hint": "Judge each sentence on its own.",
+   "why": "A is false and R is true. A tree search can reach the same state by different paths and expand it again; graph search avoids this by remembering visited states.",
+   "real": false,
+   "search": false,
+   "assertion": "A tree search never expands the same state twice.",
+   "reason": "A graph search keeps a record of the states it has already visited.",
+   "answer": 3
+  },
+  {
+   "id": "AA37",
+   "level": 4,
+   "topic": "Breadth-First Search",
+   "kind": "problem",
+   "text": "In what order does breadth-first search visit the nodes until it reaches H?",
+   "hint": "Level by level, left to right.",
+   "why": "BFS visits A, then B and C, then D, E, F and G, then H.",
+   "real": false,
+   "search": true,
+   "options": [
+    "A, B, D, E, H",
+    "A, B, C, D, E, F, G, H",
+    "A, C, G, F, B, E, H",
+    "A, B, C, E, H"
+   ],
+   "answer": 1,
+   "figure": "Tree (children listed left to right):\nA → B, C\nB → D, E\nC → F, G\nE → H\nH is the goal."
+  },
+  {
+   "id": "AA38",
+   "level": 4,
+   "topic": "Breadth-First Search",
+   "kind": "mcq",
+   "text": "Which node does breadth-first search always expand next?",
+   "hint": "It finishes one level before starting the next.",
+   "why": "BFS expands the shallowest unexpanded node, which a FIFO queue provides.",
+   "real": false,
+   "search": false,
+   "options": [
+    "A randomly chosen node",
+    "The deepest unexpanded node",
+    "The node with the lowest heuristic value",
+    "The shallowest unexpanded node"
+   ],
+   "answer": 3
+  },
+  {
+   "id": "AA39",
+   "level": 4,
+   "topic": "Breadth-First Search",
+   "kind": "truefalse",
+   "text": "For the same search tree, breadth-first search generally needs less memory than depth-first search.",
+   "hint": "Which one stores a whole level at a time?",
+   "why": "False. BFS stores every node on the frontier, O(b^d); DFS stores only one path and its siblings, O(bm).",
+   "real": false,
+   "search": false,
+   "answer": false
+  },
+  {
+   "id": "AA40",
+   "level": 4,
+   "topic": "Breadth-First Search",
+   "kind": "problem",
+   "text": "A complete binary tree has its root at depth 0 and leaves at depth 4. If the goal is the last leaf, how many nodes has breadth-first search visited when it finds it?",
+   "hint": "1 + 2 + 4 + 8 + 16.",
+   "why": "BFS visits every node: 1 + 2 + 4 + 8 + 16 = 31.",
+   "real": false,
+   "search": true,
+   "options": [
+    "15",
+    "16",
+    "31",
+    "32"
+   ],
+   "answer": 2
+  },
+  {
+   "id": "AA41",
+   "level": 4,
+   "topic": "Depth-First Search",
+   "kind": "problem",
+   "text": "In what order does depth-first search (leftmost child first) visit the nodes until it reaches H?",
+   "hint": "Go deep first; D is a dead end.",
+   "why": "DFS visits A, B, D (dead end), then E, then H.",
+   "real": false,
+   "search": true,
+   "options": [
+    "A, B, C, D, E, H",
+    "A, B, D, E, H",
+    "A, B, E, H",
+    "A, C, F, G, B, D, E, H"
+   ],
+   "answer": 1,
+   "figure": "Tree (children listed left to right):\nA → B, C\nB → D, E\nC → F, G\nE → H\nH is the goal."
+  },
+  {
+   "id": "AA42",
+   "level": 4,
+   "topic": "Depth-First Search",
+   "kind": "mcq",
+   "text": "What is the main weakness of depth-first search?",
+   "hint": "Think about a branch that never ends.",
+   "why": "DFS is not complete in infinite-depth spaces and is not optimal, because it may dive down a wrong branch.",
+   "real": false,
+   "search": false,
+   "options": [
+    "It cannot be implemented with a stack",
+    "It can follow an infinite or very long path and miss a shallow goal",
+    "It needs a heuristic function",
+    "It needs exponential memory"
+   ],
+   "answer": 1
+  },
+  {
+   "id": "AA43",
+   "level": 4,
+   "topic": "Depth-First Search",
+   "kind": "blank",
+   "text": "When depth-first search hits a dead end it returns to the most recent node that still has unexplored children. This is called ______.",
+   "hint": "Going back along the track.",
+   "why": "Backtracking lets DFS try the next alternative after a branch fails.",
+   "real": false,
+   "search": false,
+   "accept": [
+    "backtracking",
+    "backtrack",
+    "back tracking"
+   ]
+  },
+  {
+   "id": "AA44",
+   "level": 4,
+   "topic": "Depth-First Search",
+   "kind": "scenario",
+   "text": "A small maze-solving robot follows one corridor to its end before it tries any alternative, and it has very little memory. Which strategy is it using?",
+   "hint": "One path at a time, little memory.",
+   "why": "Following one path to the end and backing up only at dead ends is depth-first search, which needs little memory.",
+   "real": true,
+   "search": true,
+   "options": [
+    "Breadth-first search",
+    "Best-first search",
+    "Depth-first search",
+    "Simulated annealing"
+   ],
+   "answer": 2
+  },
+  {
+   "id": "AA45",
+   "level": 4,
+   "topic": "Iterative Deepening",
+   "kind": "mcq",
+   "text": "Iterative deepening search runs a depth-limited search repeatedly. How does the depth limit change?",
+   "hint": "0, 1, 2, 3, …",
+   "why": "The limit grows 0, 1, 2, … until a goal is found, which gives BFS-like completeness with DFS-like memory.",
+   "real": false,
+   "search": false,
+   "options": [
+    "It doubles each time",
+    "It stays fixed",
+    "It decreases from the maximum depth",
+    "It increases by one each time, starting from 0"
+   ],
+   "answer": 3
+  },
+  {
+   "id": "AA46",
+   "level": 4,
+   "topic": "Iterative Deepening",
+   "kind": "problem",
+   "text": "A tree has branching factor 2 and the goal is at depth 3. Not counting the root, how many nodes does iterative deepening search generate in total?",
+   "hint": "Depth-1 nodes are generated 3 times, depth-2 nodes twice, depth-3 nodes once.",
+   "why": "3(2) + 2(4) + 1(8) = 22 nodes.",
+   "real": false,
+   "search": true,
+   "options": [
+    "14",
+    "22",
+    "28",
+    "8"
+   ],
+   "answer": 1
+  },
+  {
+   "id": "AA47",
+   "level": 4,
+   "topic": "Iterative Deepening",
+   "kind": "truefalse",
+   "text": "Depth-limited search with limit l will fail to find a solution if the shallowest goal lies deeper than l.",
+   "hint": "It never looks below the limit.",
+   "why": "True. Nodes at the limit are treated as having no successors, so deeper goals are missed. Iterative deepening fixes this.",
+   "real": false,
+   "search": false,
+   "answer": true
+  },
+  {
+   "id": "AA48",
+   "level": 4,
+   "topic": "Iterative Deepening",
+   "kind": "assertion",
+   "text": "",
+   "hint": "What data structure does a depth-limited search use?",
+   "why": "A is true and R is false. IDS is a series of depth-first (stack-based) searches with growing limits.",
+   "real": false,
+   "search": false,
+   "assertion": "Iterative deepening search finds the shallowest goal when all steps cost the same.",
+   "reason": "Iterative deepening search stores its frontier in a priority queue ordered by path cost.",
+   "answer": 2
+  },
+  {
+   "id": "AA49",
+   "level": 5,
+   "topic": "Hill Climbing and its Variations",
+   "kind": "mcq",
+   "text": "Hill climbing is called a greedy local search because it",
+   "hint": "It has been compared to climbing in thick fog.",
+   "why": "Hill climbing keeps one current state and moves to a better neighbour without looking further ahead.",
+   "real": false,
+   "search": false,
+   "options": [
+    "expands nodes in order of depth",
+    "looks only at the immediate neighbours of the current state and moves to a better one",
+    "always finds the global optimum",
+    "keeps every state it has ever generated"
+   ],
+   "answer": 1
+  },
+  {
+   "id": "AA50",
+   "level": 5,
+   "topic": "Hill Climbing and its Variations",
+   "kind": "problem",
+   "text": "Simple hill climbing is minimising h. The current state has h = 5. Its successors have h = 6, 4 and 5. The search moves to the best one, whose successors have h = 4 and 5. With no sideways moves allowed, at what value of h does the search stop?",
+   "hint": "It needs a strictly better neighbour to move.",
+   "why": "It moves from 5 to 4. No successor is better than 4, so it stops at h = 4, a local minimum (or plateau).",
+   "real": false,
+   "search": true,
+   "options": [
+    "5",
+    "4",
+    "3",
+    "0"
+   ],
+   "answer": 1
+  },
+  {
+   "id": "AA51",
+   "level": 5,
+   "topic": "Hill Climbing and its Variations",
+   "kind": "scenario",
+   "text": "A delivery-route optimiser keeps getting stuck on routes that are decent but not the best. The engineers make it run many times from different random starting routes and keep the best result. Which technique is this?",
+   "hint": "If at first you don't succeed…",
+   "why": "Random-restart hill climbing runs hill climbing from many random initial states to escape local optima.",
+   "real": true,
+   "search": false,
+   "options": [
+    "Breadth-first search",
+    "Steepest-ascent hill climbing",
+    "Means-end analysis",
+    "Random-restart hill climbing"
+   ],
+   "answer": 3
+  },
+  {
+   "id": "AA52",
+   "level": 5,
+   "topic": "Heuristic Search",
+   "kind": "blank",
+   "text": "A heuristic that never overestimates the true cost of reaching the goal is called ______.",
+   "hint": "A* needs this property to be optimal.",
+   "why": "An admissible heuristic is optimistic: it never overestimates the remaining cost.",
+   "real": false,
+   "search": false,
+   "accept": [
+    "admissible"
+   ]
+  },
+  {
+   "id": "AA53",
+   "level": 5,
+   "topic": "Heuristic Search",
+   "kind": "problem",
+   "text": "What is the value of the misplaced-tiles heuristic for the current state (the blank is not counted)?",
+   "hint": "Compare each numbered tile with the goal.",
+   "why": "Only tiles 5 and 8 are out of place, so h = 2.",
+   "real": false,
+   "search": true,
+   "options": [
+    "1",
+    "2",
+    "3",
+    "4"
+   ],
+   "answer": 1,
+   "figure": "Current:\n1 2 3\n4 _ 6\n7 5 8\nGoal:\n1 2 3\n4 5 6\n7 8 _"
+  },
+  {
+   "id": "AA54",
+   "level": 5,
+   "topic": "Heuristic Search",
+   "kind": "problem",
+   "text": "Using A* search, which path from S to G is returned and what is its cost?",
+   "hint": "Compute f = g + h for A and B, and keep going until G is taken off the list.",
+   "why": "f(A) = 2 + 2 = 4, f(B) = 1 + 1 = 2. B is expanded first, giving G with f = 7. Then A (f = 4) is expanded, giving G with f = 4, which is selected. Result: S → A → G, cost 4.",
+   "real": false,
+   "search": true,
+   "options": [
+    "S → B → G, cost 7",
+    "S → A → G, cost 4",
+    "S → A → G, cost 7",
+    "S → B → G, cost 4"
+   ],
+   "answer": 1,
+   "figure": "Edge costs: S→A = 2, S→B = 1, A→G = 2, B→G = 6\nHeuristic: h(S) = 3, h(A) = 2, h(B) = 1, h(G) = 0"
+  },
+  {
+   "id": "AA55",
+   "level": 5,
+   "topic": "Best First Search",
+   "kind": "problem",
+   "text": "Using greedy best-first search, which path from S to G is returned and what is its cost?",
+   "hint": "Greedy search looks only at h.",
+   "why": "h(B) = 1 is lower than h(A) = 2, so B is expanded and G is reached through B: cost 1 + 6 = 7. The cheaper path through A is missed.",
+   "real": false,
+   "search": true,
+   "options": [
+    "S → A → G, cost 4",
+    "S → B → G, cost 7",
+    "S → B → G, cost 1",
+    "S → A → G, cost 2"
+   ],
+   "answer": 1,
+   "figure": "Edge costs: S→A = 2, S→B = 1, A→G = 2, B→G = 6\nHeuristic: h(S) = 3, h(A) = 2, h(B) = 1, h(G) = 0"
+  },
+  {
+   "id": "AA56",
+   "level": 5,
+   "topic": "Best First Search",
+   "kind": "mcq",
+   "text": "How is the OPEN list in best-first search ordered?",
+   "hint": "It is a priority queue.",
+   "why": "OPEN is kept as a priority queue so the node that looks best according to the evaluation function is expanded next.",
+   "real": false,
+   "search": false,
+   "options": [
+    "Alphabetically",
+    "By the time nodes were generated",
+    "By heuristic value, most promising node first",
+    "By depth, deepest first"
+   ],
+   "answer": 2
+  },
+  {
+   "id": "AA57",
+   "level": 5,
+   "topic": "Constraint Satisfaction Problems",
+   "kind": "problem",
+   "text": "The 4-queens problem asks for 4 queens on a 4×4 board with no two attacking each other. How many distinct solutions does it have?",
+   "hint": "The solutions are mirror images of each other.",
+   "why": "There are exactly 2 solutions: queens in columns (2,4,1,3) and (3,1,4,2) for rows 1 to 4.",
+   "real": false,
+   "search": true,
+   "options": [
+    "1",
+    "2",
+    "4",
+    "8"
+   ],
+   "answer": 1
+  },
+  {
+   "id": "AA58",
+   "level": 5,
+   "topic": "Constraint Satisfaction Problems",
+   "kind": "scenario",
+   "text": "A telecom company must give each mobile tower a radio frequency so that neighbouring towers never use the same one, using as few frequencies as possible. How should the problem be modelled?",
+   "hint": "Towers are like regions on a map.",
+   "why": "Towers are variables, frequencies are the domain and \"neighbours must differ\" is the constraint: a graph-colouring CSP.",
+   "real": true,
+   "search": false,
+   "options": [
+    "As a simple reflex agent",
+    "As a Turing Test",
+    "As a production system with no rules",
+    "As a constraint satisfaction (graph colouring) problem"
+   ],
+   "answer": 3
+  },
+  {
+   "id": "AA59",
+   "level": 5,
+   "topic": "Means-End Analysis",
+   "kind": "match",
+   "text": "Match each technique with its key idea.",
+   "hint": "One of them is about differences.",
+   "why": "Means-end analysis works on differences; A* on cost so far plus estimate; CSPs on variables, domains and constraints; hill climbing on local improvement.",
+   "real": false,
+   "search": false,
+   "pairs": [
+    [
+     "Hill climbing",
+     "Move to a neighbouring state that is better"
+    ],
+    [
+     "A* search",
+     "Order nodes by f(n) = g(n) + h(n)"
+    ],
+    [
+     "Constraint satisfaction",
+     "Assign values to variables without breaking any restriction"
+    ],
+    [
+     "Means-end analysis",
+     "Pick an operator that reduces the difference from the goal"
+    ]
+   ]
+  },
+  {
+   "id": "AA60",
+   "level": 5,
+   "topic": "Means-End Analysis",
+   "kind": "assertion",
+   "text": "",
+   "hint": "Is the history the cause of the behaviour?",
+   "why": "Both are true, but R does not explain A. Sub-goals arise because an operator's preconditions may not hold; the GPS fact is just history.",
+   "real": false,
+   "search": false,
+   "assertion": "Means-end analysis can create sub-goals while solving a problem.",
+   "reason": "Means-end analysis was introduced in the General Problem Solver.",
+   "answer": 1
+  }
+ ]
+};
+
+// Agent Arena - game logic.
+// The quiz is a ladder of 5 levels. Every screen is built as an HTML string and
+// buttons carry a data-act attribute that one click listener dispatches on.
+
+const LEVELS = BANK.levels, ALL = BANK.questions, AR_OPTIONS = BANK.arOptions;
+const KIND = { mcq: "MCQ", truefalse: "True / False", assertion: "Assertion-Reason", blank: "Fill in the blank",
+               match: "Match the following", scenario: "Scenario", problem: "Problem solving" };
+const RANKS = { rookie: { name: "Rookie", secs: 45, mult: 1 }, pro: { name: "Pro", secs: 30, mult: 1.5 }, expert: { name: "Expert", secs: 20, mult: 2 } };
+const LENGTHS = { 2: "Sprint", 4: "Classic", 10: "Marathon" };
+const RULES = { base: 100, perSecond: 2, clueCost: 30, comboStep: 10, comboCap: 5, lives: 3, freeze: 15 };
+const view = document.getElementById("view");
+
+/* ---------- utilities ---------- */
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const mix = list => { const a = [...list]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const tidy = s => String(s).trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
+const clock = s => `${Math.floor(s / 60)}:${String(Math.round(s) % 60).padStart(2, "0")}`;
+const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch (e) { return d; } };
+
+/* ---------- game state ---------- */
+const setup = Object.assign({ name: "", perLevel: 4, rank: "rookie", mode: "challenge" }, load("arena_setup", {}));
+let screen = "start", game = null, ticker = null, startedAt = 0, extra = 0, bankOpen = false, fameFilter = "all";
+
+/* ---------- building a game ---------- */
+function drawLevel(level, count) {
+  // prefer different topics inside a level, then fill up with whatever is left
+  const pool = mix(ALL.filter(q => q.level === level)), seen = new Set(), first = [], rest = [];
+  for (const q of pool) (seen.has(q.topic) ? rest : (seen.add(q.topic), first)).push(q);
+  return mix([...first, ...rest].slice(0, count));
+}
+function wrap(q) {
+  const turn = { q, state: "open", pick: null, clue: false, gone: [], points: 0, secs: 0, shielded: false };
+  if (q.options) turn.order = mix(q.options.map((_, i) => i));
+  if (q.kind === "assertion") turn.order = [0, 1, 2, 3];
+  if (q.kind === "match") { turn.right = mix(q.pairs.map(p => p[1])); turn.links = {}; turn.hand = null; }
+  if (q.kind === "blank") turn.pick = "";
+  return turn;
+}
+function newGame() {
+  const turns = [];
+  for (const lv of LEVELS) turns.push(...drawLevel(lv.n, setup.perLevel).map(wrap));
+  game = { turns, at: 0, score: 0, combo: 0, bestCombo: 0, lives: RULES.lives, cfg: { ...setup },
+           power: { freeze: 2, zap: 2, shield: 1 }, usedPower: false, armed: false, over: false, intro: 1 };
+  screen = "intro"; paint();
+}
+const turn = () => game.turns[game.at];
+const timed = () => game.cfg.mode === "challenge";
+const limit = t => RANKS[game.cfg.rank].secs + (t.q.kind === "match" || t.q.kind === "problem" ? 15 : 0);
+
+/* ---------- checking and scoring ---------- */
+function ready(t) {
+  if (t.q.kind === "blank") return tidy(t.pick) !== "";
+  if (t.q.kind === "match") return Object.keys(t.links).length === t.q.pairs.length;
+  return t.pick !== null;
+}
+function correct(q, t) {
+  if (q.kind === "blank") return q.accept.map(tidy).includes(tidy(t.pick));
+  if (q.kind === "match") return q.pairs.every((p, i) => t.links[i] === p[1]);
+  return t.pick === q.answer;
+}
+function rightAnswer(q) {
+  if (q.kind === "truefalse") return q.answer ? "True" : "False";
+  if (q.kind === "assertion") return AR_OPTIONS[q.answer];
+  if (q.kind === "blank") return q.accept[0];
+  if (q.kind === "match") return q.pairs.map(p => `${p[0]} = ${p[1]}`).join("; ");
+  return q.options[q.answer];
+}
+function settle(t, secsUsed, timeout) {
+  const total = limit(t);
+  t.secs = Math.min(secsUsed, total + extra);
+  const good = !timeout && correct(t.q, t);
+  if (good) {
+    game.combo++; game.bestCombo = Math.max(game.bestCombo, game.combo);
+    const base = Math.round(RULES.base * RANKS[game.cfg.rank].mult);
+    const speed = timed() ? Math.max(0, Math.floor(total + extra - secsUsed)) * RULES.perSecond : 0;
+    const combo = game.combo >= 2 ? RULES.comboStep * Math.min(game.combo, RULES.comboCap) : 0;
+    t.points = Math.max(0, base + speed + combo - (t.clue ? RULES.clueCost : 0));
+    t.parts = { base, speed, combo };
+    game.score += t.points; t.state = "right";
+  } else {
+    game.combo = 0; t.state = timeout ? "late" : "wrong";
+    if (timed()) { if (game.armed) { t.shielded = true; } else game.lives--; }
+  }
+  game.armed = false;
+  if (timed() && game.lives <= 0) game.over = true;
+}
+function summary(g) {
+  const done = g.turns.filter(t => t.state !== "open");
+  const right = done.filter(t => t.state === "right").length;
+  const perLevel = LEVELS.map(lv => { const ts = g.turns.filter(t => t.q.level === lv.n); return { lv, right: ts.filter(t => t.state === "right").length, total: ts.length, done: ts.filter(t => t.state !== "open").length }; });
+  const acc = Math.round(100 * right / g.turns.length);
+  const secs = Math.round(done.reduce((s, t) => s + t.secs, 0));
+  const badges = [];
+  if (perLevel.some(l => l.done === l.total && l.right === l.total)) badges.push("Flawless level");
+  if (g.bestCombo >= 5) badges.push("Combo x5");
+  if (!g.usedPower && done.length === g.turns.length) badges.push("No power-ups");
+  if (timed() && !g.over && g.lives === RULES.lives) badges.push("Untouched");
+  if (timed() && done.length && secs / done.length < 12 && acc >= 60) badges.push("Quick thinker");
+  const title = acc >= 85 ? "Utility Maximiser" : acc >= 60 ? "Goal-Based Agent" : acc >= 40 ? "Model-Based Agent" : "Simple Reflex Agent";
+  return { right, total: g.turns.length, answered: done.length, acc, secs, perLevel, badges, title, stars: acc >= 85 ? 3 : acc >= 60 ? 2 : acc >= 40 ? 1 : 0 };
+}
+
+/* ---------- timer ---------- */
+const secsLeft = t => Math.max(0, limit(t) + extra - (Date.now() - startedAt) / 1000);
+function stopClock() { clearInterval(ticker); ticker = null; }
+function runClock() {
+  stopClock(); startedAt = Date.now(); extra = 0;
+  if (!timed()) return;
+  ticker = setInterval(() => {
+    const t = turn(); if (!t || t.state !== "open") return stopClock();
+    const total = limit(t) + extra, left = total - (Date.now() - startedAt) / 1000;
+    const ring = document.getElementById("ring"), txt = document.getElementById("left");
+    if (ring) { ring.style.setProperty("--p", Math.max(0, 100 * left / total)); ring.classList.toggle("low", left <= 8); }
+    if (txt) txt.textContent = Math.max(0, Math.ceil(left));
+    if (left <= 0) lockIn(true);
+  }, 200);
+}
+function lockIn(timeout) {
+  const t = turn(); if (t.state !== "open" || (!timeout && !ready(t))) return;
+  stopClock(); settle(t, (Date.now() - startedAt) / 1000, timeout); paint();
+  document.getElementById("onward")?.focus();
+}
+function onward() {
+  const t = turn(), last = game.at === game.turns.length - 1;
+  if (game.over || last) return finish();
+  const next = game.turns[game.at + 1];
+  game.at++;
+  if (next.q.level !== t.q.level) { game.intro = next.q.level; screen = "intro"; paint(); }
+  else { runClock(); paint(); }
+  window.scrollTo(0, 0);
+}
+function finish() {
+  stopClock();
+  const s = summary(game);
+  game.entry = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: (game.cfg.name || "").trim().slice(0, 20) || "Anonymous agent",
+    score: game.score, acc: s.acc, right: s.right, total: s.total, rank: game.cfg.rank, mode: game.cfg.mode, len: game.cfg.perLevel, secs: s.secs, when: Date.now(), cleared: !game.over };
+  save("arena_scores", [...load("arena_scores", []), game.entry].slice(-150));
+  screen = "end"; paint(); window.scrollTo(0, 0);
+}
+
+/* ---------- screens ---------- */
+const option = (group, key, on, title, sub) => `<button class="${on ? "on" : ""}" aria-pressed="${on}" data-act="set" data-key="${group}" data-val="${key}"><b>${esc(title)}</b><small>${esc(sub)}</small></button>`;
+function startScreen() {
+  return `<section class="col">
+    <div><p class="dim" style="font-weight:700">An AI quiz in five levels</p>
+      <h1 class="title">Train your <em>agent</em>.<br>Clear the arena.</h1></div>
+    <div class="split">
+      <div class="card col">
+        <div><label class="cap" for="who">Agent name</label><input type="text" id="who" maxlength="20" placeholder="Type your name" value="${esc(setup.name)}" autocomplete="off"></div>
+        <div><span class="cap">Mode</span><div class="pick">
+          ${option("mode", "challenge", setup.mode === "challenge", "Challenge", "3 lives, timer on")}
+          ${option("mode", "practice", setup.mode === "practice", "Practice", "no lives, no timer")}</div></div>
+        <div><span class="cap">Length</span><div class="pick">
+          ${option("perLevel", 2, setup.perLevel === 2, "Sprint", "10 questions")}
+          ${option("perLevel", 4, setup.perLevel === 4, "Classic", "20 questions")}
+          ${option("perLevel", 10, setup.perLevel === 10, "Marathon", "50 questions")}</div></div>
+        <div><span class="cap">Difficulty</span><div class="pick">
+          ${Object.entries(RANKS).map(([k, r]) => option("rank", k, setup.rank === k, r.name, `${r.secs}s each, x${r.mult} points`)).join("")}</div></div>
+        <div><button class="go" id="begin" data-act="new">Enter the arena</button></div>
+      </div>
+      <div class="card col">
+        <h2 style="font-size:22px">The five levels</h2>
+        <ol class="ladder">${LEVELS.map(l => `<li><span class="chip c${l.n}">${l.n}</span><div><b>${esc(l.name)}</b><span>${esc(l.about)}</span></div></li>`).join("")}</ol>
+      </div>
+    </div></section>`;
+}
+function introScreen() {
+  const lv = LEVELS[game.intro - 1], prev = game.intro > 1 ? summary(game).perLevel[game.intro - 2] : null;
+  const count = game.turns.filter(t => t.q.level === lv.n).length;
+  return `<section class="col">
+    ${prev ? `<div class="card"><b>Level ${prev.lv.n} cleared:</b> ${prev.right} of ${prev.total} correct. Score so far <span class="num">${game.score}</span>.</div>` : ""}
+    <div class="banner col" style="background:var(--l${lv.n})">
+      <p style="font-weight:700">Level ${lv.n} of ${LEVELS.length}</p><h2>${esc(lv.name)}</h2><p>${esc(lv.about)}</p>
+      <p>${count} question${count === 1 ? "" : "s"}${timed() ? ` · ${RANKS[game.cfg.rank].secs} seconds each · ${game.lives} ${game.lives === 1 ? "life" : "lives"} left` : " · practice mode"}</p>
+    </div>
+    <div><button class="go" id="levelgo" data-act="level">Start level ${lv.n}</button></div></section>`;
+}
+function answerBlock(t) {
+  const q = t.q, shut = t.state !== "open";
+  if (q.kind === "blank")
+    return `<div><label class="cap" for="gap">Type the missing word</label><input type="text" id="gap" autocomplete="off" value="${esc(t.pick)}" ${shut ? "disabled" : ""}></div>`;
+  if (q.kind === "match") {
+    const tagOf = r => { const i = Object.keys(t.links).find(k => t.links[k] === r); return i === undefined ? "" : `<span class="tag">${+i + 1}</span>`; };
+    return `<p class="dim" style="font-size:15px">Tap an item on the left, then its partner on the right.</p><div class="pairs">
+      <div class="side">${q.pairs.map((p, i) => `<button class="tile ${t.hand === i ? "on" : ""} ${shut ? (t.links[i] === p[1] ? "good" : "bad") : ""}" data-act="left" data-i="${i}" ${shut ? "disabled" : ""}><span class="tag">${i + 1}</span><span>${esc(p[0])}</span></button>`).join("")}</div>
+      <div class="side">${t.right.map((r, j) => `<button class="tile" data-act="right" data-j="${j}" ${shut ? "disabled" : ""}>${tagOf(r)}<span>${esc(r)}</span></button>`).join("")}</div></div>`;
+  }
+  const rows = q.kind === "truefalse" ? [[true, "True"], [false, "False"]] : t.order.map(i => [i, (q.kind === "assertion" ? AR_OPTIONS : q.options)[i]]);
+  return `<div class="choices ${q.kind === "truefalse" ? "two" : ""}">${rows.map(([val, label], n) => {
+    const out = t.gone.includes(val);
+    const cls = shut ? (val === q.answer ? "good" : val === t.pick ? "bad" : "") : (val === t.pick ? "on" : "");
+    return `<button class="choice ${cls} ${out ? "out" : ""}" data-act="pick" data-n="${n}" ${shut || out ? "disabled" : ""}><span class="key">${"ABCD"[n]}</span><span>${esc(label)}</span></button>`;
+  }).join("")}</div>`;
+}
+function playScreen() {
+  const t = turn(), q = t.q, shut = t.state !== "open", lv = LEVELS[q.level - 1];
+  const inLevel = game.turns.filter(x => x.q.level === q.level), pos = inLevel.indexOf(t) + 1;
+  const bars = LEVELS.map(l => { const ts = game.turns.filter(x => x.q.level === l.n); return `<div title="Level ${l.n}"><i style="width:${100 * ts.filter(x => x.state !== "open").length / ts.length}%;background:var(--l${l.n})"></i></div>`; }).join("");
+  const hearts = timed() ? `<div><small>Lives</small><b class="hearts">${[1, 2, 3].map(i => `<span class="${i > game.lives ? "lost" : ""}">&#9829;</span>`).join("")}</b></div>` : "";
+  const canZap = ["mcq", "scenario", "problem", "assertion"].includes(q.kind) && t.gone.length < 2;
+  const head = q.kind === "assertion"
+    ? `<div class="ask ar"><p><b>Assertion (A):</b> ${esc(q.assertion)}</p><p><b>Reason (R):</b> ${esc(q.reason)}</p></div>`
+    : `<h2 class="ask" style="font-family:var(--text)">${esc(q.text)}</h2>`;
+  let verdict = "";
+  if (shut) {
+    const good = t.state === "right";
+    const headline = good ? `Correct! +${t.points}` : t.state === "late" ? "Out of time" : "Not this time";
+    const detail = good ? `<p class="num" style="font-size:14px">base ${t.parts.base}${t.parts.speed ? ` + speed ${t.parts.speed}` : ""}${t.parts.combo ? ` + combo ${t.parts.combo}` : ""}${t.clue ? ` - clue ${RULES.clueCost}` : ""}</p>`
+      : `<p><b>Answer:</b> ${esc(rightAnswer(q))}</p>${t.shielded ? "<p><b>Shield used:</b> no life lost.</p>" : ""}`;
+    verdict = `<div class="verdict ${good ? "good" : "bad"}" role="status"><h3>${headline}</h3>${detail}<p>${esc(q.why)}</p></div>`;
+  }
+  const last = game.at === game.turns.length - 1 || game.over;
+  return `<section class="col">
+    <div class="hud">
+      <div><small>Level ${lv.n}</small><b>${pos} / ${inLevel.length}</b></div>
+      <div><small>Score</small><b id="score">${game.score}</b></div>
+      <div><small>Combo</small><b>x${game.combo}</b></div>${hearts}
+      ${timed() ? `<div class="clock"><span class="ring ${!shut && secsLeft(t) <= 8 ? "low" : ""}" id="ring" style="--p:${shut ? 0 : 100 * secsLeft(t) / (limit(t) + extra)}"></span><div><small>Seconds</small><br><b id="left">${shut ? "-" : Math.ceil(secsLeft(t))}</b></div></div>` : ""}
+    </div>
+    <div class="steps" role="img" aria-label="Question ${game.at + 1} of ${game.turns.length}">${bars}</div>
+    <div class="card col">
+      <div class="meta"><span class="pill kind" style="background:var(--l${lv.n})">${KIND[q.kind]}</span><span class="pill">${esc(q.topic)}</span>${q.real ? '<span class="pill">real world</span>' : ""}${q.search ? '<span class="pill">search problem</span>' : ""}</div>
+      ${head}
+      ${q.figure ? `<div class="fig">${esc(q.figure)}</div>` : ""}
+      ${answerBlock(t)}
+      ${t.clue ? `<div class="clue"><b>Clue:</b> ${esc(q.hint)}</div>` : ""}
+      ${verdict}
+      ${shut ? `<div><button class="go" id="onward" data-act="onward">${last ? "See results" : "Next"}</button></div>`
+        : `<div class="line" style="justify-content:space-between">
+            <button class="go" id="lock" data-act="lock" ${ready(t) ? "" : "disabled"}>Lock in</button>
+            <div class="power">
+              <button id="p-clue" data-act="clue" ${t.clue ? "disabled" : ""}>Clue (-${RULES.clueCost})</button>
+              <button id="p-zap" data-act="zap" ${game.power.zap && canZap ? "" : "disabled"}>Zap an option (${game.power.zap})</button>
+              ${timed() ? `<button id="p-freeze" data-act="freeze" ${game.power.freeze ? "" : "disabled"}>+${RULES.freeze}s (${game.power.freeze})</button>
+              <button id="p-shield" class="${game.armed ? "armed" : ""}" data-act="shield" ${game.power.shield || game.armed ? "" : "disabled"}>${game.armed ? "Shield on" : `Shield (${game.power.shield})`}</button>` : ""}
+            </div></div>`}
+    </div>
+    <div><button class="go alt sm" data-act="go" data-to="start">Leave game</button></div></section>`;
+}
+function endScreen() {
+  const s = summary(game), e = game.entry;
+  const place = scores().filter(x => x.len === e.len && x.mode === e.mode).findIndex(x => x.id === e.id) + 1;
+  return `<section class="col">
+    <div class="card col">
+      <p class="dim" style="font-weight:700">${game.over ? "Out of lives on level " + turn().q.level : "Arena cleared"} · ${esc(e.name)}</p>
+      <div class="stars" aria-label="${s.stars} of 3 stars">${[1, 2, 3].map(i => `<span class="${i > s.stars ? "off" : ""}">&#9733;</span>`).join("")}</div>
+      <div class="line" style="align-items:baseline;gap:8px 24px"><span class="huge" id="final">${game.score}</span><span class="num">${s.right}/${s.total} correct · ${s.acc}% · best combo x${game.bestCombo} · ${clock(s.secs)}</span></div>
+      <h2 style="font-size:26px">Rank earned: ${s.title}</h2>
+      ${s.badges.length ? `<div class="badges">${s.badges.map(b => `<span class="badge">${b}</span>`).join("")}</div>` : ""}
+      ${place ? `<p>You are number ${place} in the Hall of Fame for ${LENGTHS[e.len]} ${e.mode} games.</p>` : ""}
+      <div class="line"><button class="go" id="again" data-act="new">Play again</button><button class="go alt" data-act="go" data-to="fame">Hall of Fame</button></div>
+    </div>
+    <div class="card col"><h2 style="font-size:22px">Level by level</h2><div class="scroll"><table>
+      <thead><tr><th>Level</th><th>Name</th><th>Progress</th><th class="r">Correct</th></tr></thead>
+      <tbody>${s.perLevel.map(l => `<tr><td><span class="chip c${l.lv.n}" style="display:inline-grid">${l.lv.n}</span></td><td>${esc(l.lv.name)}</td>
+        <td><span class="meter"><i style="width:${100 * l.right / l.total}%;background:var(--l${l.lv.n})"></i></span></td><td class="r">${l.right}/${l.total}</td></tr>`).join("")}</tbody></table></div></div>
+    <div class="card"><h2 style="font-size:22px;margin-bottom:8px">Answer review</h2>
+      ${game.turns.filter(t => t.state !== "open").map((t, i) => `<div class="rev">
+        <div class="line"><span class="num dim">${i + 1}.</span><span class="${t.state === "right" ? "ok" : "ko"}">${t.state === "right" ? "Correct +" + t.points : t.state === "late" ? "Timed out" : "Wrong"}</span><span class="pill">${KIND[t.q.kind]}</span><span class="pill">${esc(t.q.topic)}</span></div>
+        <div style="font-weight:700">${esc(t.q.kind === "assertion" ? "A: " + t.q.assertion + " R: " + t.q.reason : t.q.text)}</div>
+        <div class="key-ans"><b>Answer:</b> ${esc(rightAnswer(t.q))}<br>${esc(t.q.why)}</div></div>`).join("")}</div></section>`;
+}
+function scores() { const v = load("arena_scores", []); return (Array.isArray(v) ? v : []).sort((a, b) => b.score - a.score || b.acc - a.acc || a.secs - b.secs); }
+function fameScreen() {
+  const rows = scores().filter(e => fameFilter === "all" || String(e.len) === fameFilter).slice(0, 25), mine = game?.entry?.id;
+  const tab = (k, label) => `<button class="${fameFilter === k ? "on" : ""}" data-act="fame" data-val="${k}"><b>${label}</b></button>`;
+  return `<section class="col"><h1 style="font-size:40px">Hall of Fame</h1>
+    <p class="dim">Top scores saved in this browser.</p>
+    <div class="pick">${tab("all", "All games")}${tab("2", "Sprint")}${tab("4", "Classic")}${tab("10", "Marathon")}</div>
+    ${rows.length ? `<div class="card scroll"><table><thead><tr><th class="r">#</th><th>Agent</th><th class="r">Score</th><th class="r">Accuracy</th><th>Game</th><th class="r">Time</th><th>Date</th></tr></thead><tbody>
+      ${rows.map((e, i) => `<tr class="${e.id === mine ? "me" : ""}"><td class="r">${i + 1}</td><td>${esc(String(e.name).slice(0, 20))}</td><td class="r">${+e.score || 0}</td><td class="r">${+e.acc || 0}%</td>
+        <td>${LENGTHS[e.len] || ""} · ${RANKS[e.rank]?.name || ""} · ${e.mode === "practice" ? "practice" : e.cleared ? "cleared" : "knocked out"}</td><td class="r">${clock(+e.secs || 0)}</td><td>${new Date(e.when).toLocaleDateString(undefined, { day: "numeric", month: "short" })}</td></tr>`).join("")}</tbody></table></div>`
+      : `<div class="empty"><b>No scores yet.</b> Finish a game and your agent's name, score and accuracy will be listed here.<div style="margin-top:12px"><button class="go sm" data-act="go" data-to="start">Play now</button></div></div>`}</section>`;
+}
+function bankScreen() {
+  const body = LEVELS.map(lv => `<div class="card col"><div class="line"><span class="chip c${lv.n}">${lv.n}</span><h2 style="font-size:22px">${esc(lv.name)}</h2></div>
+    ${ALL.filter(q => q.level === lv.n).map(q => `<div class="rev"><div class="line"><span class="num">${q.id}</span><span class="pill">${KIND[q.kind]}</span><span class="pill">${esc(q.topic)}</span></div>
+      ${q.kind === "assertion" ? `<div><b>A:</b> ${esc(q.assertion)}<br><b>R:</b> ${esc(q.reason)}</div>` : `<div style="font-weight:700">${esc(q.text)}</div>`}
+      ${q.figure ? `<div class="fig">${esc(q.figure)}</div>` : ""}
+      ${q.options ? `<div>${q.options.map((o, i) => `${"ABCD"[i]}. ${esc(o)}`).join("<br>")}</div>` : ""}
+      ${q.kind === "match" ? `<div class="dim">Items: ${q.pairs.map(p => esc(p[0])).join(", ")}</div>` : ""}
+      ${bankOpen ? `<div class="key-ans"><b>Answer:</b> ${q.options ? "ABCD"[q.answer] + ". " : ""}${esc(rightAnswer(q))}<br>${esc(q.why)}</div>` : ""}</div>`).join("")}</div>`).join("");
+  return `<section class="col"><h1 style="font-size:40px">Question bank</h1>
+    <div class="line"><p class="dim">${ALL.length} questions across ${LEVELS.length} levels.</p><button class="go alt sm" id="reveal" data-act="reveal">${bankOpen ? "Hide answers" : "Show answers"}</button></div>${body}</section>`;
+}
+function rulesScreen() {
+  const n = f => ALL.filter(f).length;
+  return `<section class="col"><h1 style="font-size:40px">Rules</h1>
+    <div class="card col"><h2 style="font-size:22px">How to play</h2><ul class="plain">
+      <li>The game has five levels. Each game picks fresh random questions for every level, and the answer options are shuffled.</li>
+      <li><b>Challenge mode:</b> every question is timed and you have ${RULES.lives} lives. A wrong answer or a time-out costs one life. At zero lives the game ends.</li>
+      <li><b>Practice mode:</b> no timer and no lives, for revision.</li>
+      <li><b>Difficulty:</b> Rookie gives 45 seconds, Pro 30 and Expert 20. Harder ranks multiply points by 1.5 and 2. Matching and problem-solving questions get 15 seconds more.</li>
+      <li><b>Points:</b> ${RULES.base} x difficulty for a correct answer, plus ${RULES.perSecond} for every second left, plus a combo bonus of 10 x your streak (from 2 in a row, up to 50).</li>
+      <li><b>Power-ups:</b> Clue shows a hint for ${RULES.clueCost} points. Zap removes one wrong option (2 per game). +${RULES.freeze}s adds time (2 per game). Shield protects one life if your next answer is wrong (1 per game).</li>
+      <li>After every answer you see the correct answer and why. The end screen gives stars, a rank title, badges and a level-by-level table.</li></ul></div>
+    <div class="card col"><h2 style="font-size:22px">What is in the bank</h2>
+      <p>${ALL.length} questions on ${new Set(ALL.map(q => q.topic)).size} topics. ${n(q => q.real)} use real-world situations and ${n(q => q.search)} are search or state-space problems.</p>
+      <div class="scroll"><table><thead><tr><th>Format</th><th class="r">Questions</th></tr></thead><tbody>${Object.entries(KIND).map(([k, v]) => `<tr><td>${v}</td><td class="r">${n(q => q.kind === k)}</td></tr>`).join("")}</tbody></table></div></div></section>`;
+}
+function paint() {
+  const screens = { start: startScreen, intro: introScreen, play: playScreen, end: endScreen, fame: fameScreen, bank: bankScreen, rules: rulesScreen };
+  view.innerHTML = screens[screen]();
+  const tabFor = ["intro", "play", "end"].includes(screen) ? "start" : screen;
+  document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.to === tabFor));
+}
+
+/* ---------- one listener for every button ---------- */
+const actions = {
+  go(b) { stopClock(); screen = b.dataset.to; paint(); window.scrollTo(0, 0); },
+  set(b) { const k = b.dataset.key, v = b.dataset.val; setup[k] = k === "perLevel" ? +v : v; save("arena_setup", setup); paint(); },
+  new() { newGame(); window.scrollTo(0, 0); },
+  level() { screen = "play"; runClock(); paint(); window.scrollTo(0, 0); },
+  pick(b) { const t = turn(), n = +b.dataset.n; t.pick = t.q.kind === "truefalse" ? n === 0 : t.order[n]; paint(); document.getElementById("lock")?.focus(); },
+  left(b) { const t = turn(), i = +b.dataset.i; if (t.hand === i) t.hand = null; else { t.hand = i; delete t.links[i]; } paint(); },
+  right(b) { const t = turn(), r = t.right[+b.dataset.j]; if (t.hand === null) return;
+    for (const k of Object.keys(t.links)) if (t.links[k] === r) delete t.links[k];
+    t.links[t.hand] = r; t.hand = null; paint(); },
+  lock() { lockIn(false); },
+  onward() { onward(); },
+  clue() { const t = turn(); if (!t.clue) { t.clue = true; game.usedPower = true; paint(); } },
+  zap() { const t = turn(), q = t.q; if (!game.power.zap || t.gone.length >= 2) return;
+    const wrong = mix([0, 1, 2, 3].filter(i => i !== q.answer && !t.gone.includes(i)))[0];
+    t.gone.push(wrong); if (t.pick === wrong) t.pick = null; game.power.zap--; game.usedPower = true; paint(); },
+  freeze() { if (!game.power.freeze) return; game.power.freeze--; extra += RULES.freeze; game.usedPower = true; paint(); },
+  shield() { if (game.armed) { game.armed = false; game.power.shield++; } else if (game.power.shield) { game.armed = true; game.power.shield--; game.usedPower = true; } paint(); },
+  reveal() { bankOpen = !bankOpen; paint(); },
+  fame(b) { fameFilter = b.dataset.val; paint(); },
+};
+document.addEventListener("click", e => { const b = e.target.closest("[data-act]"); if (b && !b.disabled) actions[b.dataset.act](b); });
+document.addEventListener("input", e => {
+  if (e.target.id === "who") { setup.name = e.target.value; save("arena_setup", setup); }
+  if (e.target.id === "gap") { turn().pick = e.target.value; document.getElementById("lock").disabled = !ready(turn()); }
+});
+document.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.id === "gap") lockIn(false); });
+
+window.arena = { get game() { return game; }, RANKS, summary };
+paint();
+</script>
+
+</body></html>
